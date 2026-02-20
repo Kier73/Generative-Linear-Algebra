@@ -88,23 +88,49 @@ class RNSMatrixEngine:
         self.mod_m = 1
         for p in primes: self.mod_m *= p
 
-    def multiply(self, A: List[List[float]], B: List[List[float]], scale: float = 1000.0) -> List[List[float]]:
+    def _extended_gcd(self, a: int, b: int) -> Tuple[int, int, int]:
+        if a == 0: return b, 0, 1
+        gcd, x1, y1 = self._extended_gcd(b % a, a)
+        x = y1 - (b // a) * x1
+        y = x1
+        return gcd, x, y
+
+    def _mod_inverse(self, a: int, m: int) -> int:
+        gcd, x, y = self._extended_gcd(a, m)
+        if gcd != 1: raise ValueError("Modular inverse does not exist")
+        return (x % m + m) % m
+
+    def multiply(self, A: List[List[float]], B: List[List[float]], scale: float = 100.0) -> List[List[float]]:
         rows, cols, dim = len(A), len(B[0]), len(A[0])
-        # Simplified RNS Simulation for SDK demonstration
-        C = [[0.0] * cols for _ in range(rows)]
+        C_res = [[0] * cols for _ in range(rows)]
+        
+        # 1. Compute residues for each prime
+        residues = []
         for p in self.primes:
-            # Shift to RNS space
             A_p = [[int(x * scale) % p for x in row] for row in A]
             B_p = [[int(B[k][j] * scale) % p for j in range(cols)] for k in range(dim)]
             
-            # Sub-field Matmul
+            p_res = [[0] * cols for _ in range(rows)]
             for i in range(rows):
                 for j in range(cols):
-                    dot = sum(A_p[i][k] * B_p[k][j] for k in range(dim)) % p
-                    # For simplicity in this SDK demo, we recombine via floating point weighted average
-                    # Real VL uses CRT for exactness
-                    C[i][j] += (dot / scale) * (1.0 / len(self.primes))
-        return C
+                    p_res[i][j] = sum(A_p[i][k] * B_p[k][j] for k in range(dim)) % p
+            residues.append(p_res)
+
+        # 2. Recombine via CRT
+        final_C = [[0.0] * cols for _ in range(rows)]
+        for i in range(rows):
+            for j in range(cols):
+                # Solve x = r_i (mod p_i)
+                val = 0
+                for idx, p in enumerate(self.primes):
+                    r = residues[idx][i][j]
+                    M_i = self.mod_m // p
+                    y_i = self._mod_inverse(M_i, p)
+                    val = (val + r * M_i * y_i) % self.mod_m
+                
+                # Rescale back from fixed-point (scale^2 because it's a product)
+                final_C[i][j] = float(val) / (scale * scale)
+        return final_C
 
 class SNAPMatrixEngine:
     """Deterministic Weight Generation (On-the-fly parameterization)."""

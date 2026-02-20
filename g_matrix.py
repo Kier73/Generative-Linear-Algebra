@@ -1,14 +1,17 @@
 import ctypes
 import os
 import platform
+from typing import List, Any, Dict
 
 # --- RUST BACKEND SETUP ---
-lib_path = os.path.join(os.path.dirname(__file__), "g_matrix_rust", "target", "release", "g_matrix_rust.dll")
-if not os.path.exists(lib_path):
-    # Try Unix name if DLL fails
-    lib_path = os.path.join(os.path.dirname(__file__), "g_matrix_rust", "target", "release", "libg_matrix_rust.so")
+system = platform.system()
+lib_name = "g_matrix_rust.dll" if system == "Windows" else "libg_matrix_rust.so"
+lib_path = os.path.join(os.path.dirname(__file__), "g_matrix_rust", "target", "release", lib_name)
 
 try:
+    if not os.path.exists(lib_path):
+        raise FileNotFoundError(f"Backend library not found at {lib_path}")
+    
     lib = ctypes.CDLL(lib_path)
     # FFI Signatures
     class GeometricDescriptorStruct(ctypes.Structure):
@@ -191,11 +194,8 @@ class InductiveEngine:
             )
             return c_arr.reshape(M, N)
 
-        # Python Fallback (Slow)
-        A_list = a_np.tolist()
-        B_list = b_np.tolist()
+        # Python Fallback (Tiled Inductive Execution)
         C = [[0.0] * N for _ in range(M)]
-        
         for i in range(0, M, self.tile_size):
             for j in range(0, N, self.tile_size):
                 for k in range(0, K, self.tile_size):

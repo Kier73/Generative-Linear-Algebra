@@ -168,12 +168,29 @@ pub mod engines {
             Self { primes }
         }
 
+        fn extended_gcd(a: i128, b: i128) -> (i128, i128, i128) {
+            if a == 0 {
+                return (b, 0, 1);
+            }
+            let (gcd, x1, y1) = Self::extended_gcd(b % a, a);
+            let x = y1 - (b / a) * x1;
+            let y = x1;
+            (gcd, x, y)
+        }
+
+        fn mod_inverse(a: i128, m: i128) -> i128 {
+            let (_gcd, x, _y) = Self::extended_gcd(a, m);
+            (x % m + m) % m
+        }
+
         pub fn multiply(&self, a: &[Vec<f64>], b: &[Vec<f64>], scale: f64) -> Vec<Vec<f64>> {
             let rows = a.len();
             let cols = b[0].len();
             let dim = a[0].len();
-            let mut c = vec![vec![0.0; cols]; rows];
+            let mut final_c = vec![vec![0.0; cols]; rows];
+            let mod_m: i128 = self.primes.iter().map(|&p| p as i128).product();
 
+            let mut residues = Vec::new();
             for &p in &self.primes {
                 let a_p: Vec<Vec<u64>> = a
                     .iter()
@@ -187,17 +204,32 @@ pub mod engines {
                     }
                 }
 
+                let mut p_res = vec![vec![0u64; cols]; rows];
                 for i in 0..rows {
                     for j in 0..cols {
                         let mut dot = 0u64;
                         for k in 0..dim {
                             dot = (dot + a_p[i][k] * b_p[k][j]) % p;
                         }
-                        c[i][j] += (dot as f64 / scale) * (1.0 / self.primes.len() as f64);
+                        p_res[i][j] = dot;
                     }
                 }
+                residues.push(p_res);
             }
-            c
+
+            for i in 0..rows {
+                for j in 0..cols {
+                    let mut val: i128 = 0;
+                    for (idx, &p) in self.primes.iter().enumerate() {
+                        let r = residues[idx][i][j] as i128;
+                        let m_i = mod_m / p as i128;
+                        let y_i = Self::mod_inverse(m_i, p as i128);
+                        val = (val + r * m_i * y_i) % mod_m;
+                    }
+                    final_c[i][j] = (val as f64) / (scale * scale);
+                }
+            }
+            final_c
         }
     }
 
