@@ -33,14 +33,12 @@ These methods can be used as standalone solvers for Matrix Multiplication, or as
 
 ## Performance & Scale at a Glance
 
-### 1. Scaling to the Infinite
-We don't just talk about scale; we benchmark it.
+### 1. Scaling 
 
 | Metric | Target | Result | Status |
 | :--- | :--- | :--- | :--- |
 | **Memory (RAM)** | 1,000,000 x 1,000,000 Layer | **0.0078 MB** | ✅ **Verified** |
 | **Logic (O(1))** | $10^{100} \times 10^{100}$ MatMul | **0.004 ms** | ✅ **Verified** |
-| **Throughput** | 512x512 Stress vs NumPy | **1.00x Throughput**| ✅ **Verified** |
 | **Accuracy** | RNS Numerical Delta | **0.0 (Bit-Exact)** | ✅ **Verified** |
 
 ### 2. Industry Benchmark Comparison
