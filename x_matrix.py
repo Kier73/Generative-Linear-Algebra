@@ -6,8 +6,8 @@ and Isomorphic HDC (Hyperdimensional Computing).
 
 Key Upgrades:
 - 1024-bit Packed HDC Vectors ([int; 16]).
-- Holographic Ancestry: Directional binding history.
-- Isomorphic Shunting: Manifold recognition to bypass redundant compute.
+- Structural Composition History: Directional binding tracking.
+- Early Resolution: Descriptor recognition to bypass redundant compute.
 """
 
 import time
@@ -60,9 +60,9 @@ U64_COUNT = 16  # 1024 / 64
 
 class HdcManifold:
     """
-    1024-bit Bit-Packed HDC Vector.
-    In HDC: 1 bit = +1, 0 bit = -1.
-    XOR Binding = Holographic Product.
+    1024-bit Bit-Packed Vector.
+    In this context: 1 bit = +1, 0 bit = -1.
+    XOR Binding = Compositional Product.
     """
     def __init__(self, data: List[int] = None, seed: int = None, label: str = None):
         if seed is not None:
@@ -96,7 +96,12 @@ class HdcManifold:
         else:
             res = [self.data[i] ^ other.data[i] for i in range(U64_COUNT)]
             
-        new_label = f"({self.label} * {other.label})" if self.label and other.label else None
+        if self.label and other.label:
+            new_label = f"({self.label} * {other.label})"
+            if len(new_label) > 128:
+                new_label = new_label[:120] + "...)"
+        else:
+            new_label = None
         return HdcManifold(data=res, label=new_label)
 
     def shift(self, n: int) -> 'HdcManifold':
@@ -171,15 +176,24 @@ from sdk_registry import solver, method
 @solver("XMatrix")
 class XMatrix:
     """
-    Generation 3.5 Matrix: Isomorphic Manifold.
-    Focus: Holographic Ancestry and Constant-Latency Operations.
+    Generation 3.5 Matrix: Analytical Descriptor Engine.
+
+    Core capability: Procedural deterministic matrix generation from compact
+    seeds, with O(1) composition tracking via HDC manifold binding.
+
+    - compose(): O(1) descriptor composition that tracks structural lineage
+    - get_element(): O(1) deterministic element resolution at any (r,c)
+    - multiply_materialize(): True matrix product via materialization (O(n^2 d))
     """
-    def __init__(self, rows: int, cols: int, seed: int = 0x517, manifold: HdcManifold = None):
+    def __init__(self, rows: int, cols: int, seed: int = 0x517, manifold: HdcManifold = None,
+                 inner_dim: int = None):
         self.rows = rows
         self.cols = cols
         self.seed = seed
         self.manifold = manifold or HdcManifold(seed=seed, label="BaseVariety")
         self.oracle = ManifoldOracle()
+        # Track the inner dimension for statistical correctness in composed matrices
+        self._inner_dim = inner_dim
 
     def _get_row_descriptor(self, r: int) -> HdcManifold:
         return HdcManifold(seed=fmix64(self.seed ^ r), label=f"R{r}")
@@ -189,7 +203,27 @@ class XMatrix:
 
     @method("XMatrix", "get_element")
     def get_element(self, r: int, c: int) -> float:
-        """Resolve value via Semantic Binding."""
+        """Resolve a deterministic value at position (r, c).
+
+        For base matrices (no composition): produces values in [-1, +1]
+        via HDC bit resolution.
+
+        For composed matrices (_inner_dim is set): produces values drawn
+        from N(0, inner_dim) via Box-Muller transform on deterministic seeds.
+        This matches the statistical distribution of a true product of
+        Rademacher (+-1) random matrices.
+        """
+        if self._inner_dim is not None:
+            # Composed matrix: use Box-Muller for Gaussian values
+            # with variance = inner_dim (correct for Rademacher product)
+            import math as _math
+            h1 = fmix64(self.manifold.data[0] ^ fmix64(r) ^ fmix64(c + 0xABCDE))
+            h2 = fmix64(self.manifold.data[1] ^ fmix64(r + 0x12345) ^ fmix64(c))
+            u1 = max((h1 & 0xFFFFFFFFFFFFFFFF) / float(2**64), 1e-300)
+            u2 = (h2 & 0xFFFFFFFFFFFFFFFF) / float(2**64)
+            z = _math.sqrt(-2.0 * _math.log(u1)) * _math.cos(2.0 * _math.pi * u2)
+            return z * _math.sqrt(self._inner_dim)
+
         if HAS_RUST and self.manifold.seed is not None:
             # Optimized Path: Single FFI call for the entire interaction chain
             row_seed = fmix64(self.seed ^ r)
@@ -207,30 +241,70 @@ class XMatrix:
 
         # Fallback Pure Python path
         interaction = self._get_row_descriptor(r).bind(self._get_col_descriptor(c).shift(1))
-        # Bind with the root manifold identity
         resolved_manifold = self.manifold.bind(interaction)
         return resolved_manifold.resolve(0)
+
+    def compose(self, other: 'XMatrix') -> 'XMatrix':
+        """
+        O(1) Descriptor Composition.
+
+        Creates a new XMatrix whose manifold encodes the structural
+        lineage of both parents via HDC XOR binding. This does NOT
+        compute a matrix product — it tracks composition history.
+
+        The resulting matrix generates deterministic values consistent
+        with the statistical properties of the Rademacher product.
+        """
+        if self.cols != other.rows:
+            raise ValueError("Dimension mismatch")
+
+        # HDC composition: bind parent descriptors
+        new_manifold = self.manifold.bind(other.manifold.shift(7))
+        new_manifold.label = f"({self.manifold.label} @ {other.manifold.label})"
+
+        # Check Oracle for Isomorphism
+        isomorph = self.oracle.find_isomorph(new_manifold)
+        if isomorph:
+            print(f"[ORACLE] Isomorph found: {isomorph}. Bypassing compute.")
+
+        return XMatrix(self.rows, other.cols, manifold=new_manifold,
+                       inner_dim=self.cols)
 
     @method("XMatrix", "multiply")
     def multiply(self, other: 'XMatrix') -> 'XMatrix':
         """
-        Isomorphic Multiplication (O(1)).
-        Captures directional binding history: C = A * shift(B)
+        Symbolic Composition (O(1)).
+
+        NOTE: This performs O(1) descriptor composition, not a true matrix
+        product. To compute the actual product, use multiply_materialize().
+        The composed matrix generates values with the correct statistical
+        distribution (Gaussian with variance = inner_dim).
+        """
+        return self.compose(other)
+
+    def multiply_materialize(self, other: 'XMatrix', max_dim: int = 1000) -> List[List[float]]:
+        """
+        True matrix product via element-wise materialization.
+        C[i][j] = sum_k A[i][k] * B[k][j].
+
+        Complexity: O(rows * cols * inner_dim). Only feasible for moderate sizes.
         """
         if self.cols != other.rows:
             raise ValueError("Dimension mismatch")
-        
-        # Holographic Ancestry Capture
-        # We bind the parent manifolds to create a unique topological signature for the product
-        new_manifold = self.manifold.bind(other.manifold.shift(7))
-        new_manifold.label = f"({self.manifold.label} @ {other.manifold.label})"
-        
-        # Check Oracle for Isomorphism (Logic Compression)
-        isomorph = self.oracle.find_isomorph(new_manifold)
-        if isomorph:
-            print(f"[ORACLE] Isomorph found: {isomorph}. Bypassing compute.")
-        
-        return XMatrix(self.rows, other.cols, manifold=new_manifold)
+        if self.rows > max_dim or other.cols > max_dim or self.cols > max_dim:
+            raise ValueError(
+                f"Matrix too large for materialization ({self.rows}x{self.cols}x{other.cols}). "
+                f"Use compose() for symbolic O(1) operations."
+            )
+
+        C = [[0.0] * other.cols for _ in range(self.rows)]
+        for i in range(self.rows):
+            for j in range(other.cols):
+                s = 0.0
+                for k in range(self.cols):
+                    s += self.get_element(i, k) * other.get_element(k, j)
+                C[i][j] = s
+        return C
 
     def to_list(self, max_rows: int = 4, max_cols: int = 4) -> List[List[float]]:
         return [

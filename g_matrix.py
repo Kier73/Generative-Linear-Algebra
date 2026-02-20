@@ -1,6 +1,7 @@
 import ctypes
 import os
 import platform
+import struct
 from typing import List, Any, Dict
 
 # --- RUST BACKEND SETUP ---
@@ -36,6 +37,15 @@ try:
     ]
 
     lib.g_matrix_rns_matmul.argtypes = [
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.POINTER(ctypes.c_float),
+        ctypes.c_size_t,
+        ctypes.c_size_t,
+        ctypes.c_size_t
+    ]
+
+    lib.g_matrix_inductive_matmul.argtypes = [
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
         ctypes.POINTER(ctypes.c_float),
@@ -133,10 +143,17 @@ class GeometricMatrix:
     def __getitem__(self, key: Any) -> Any:
         import numpy as np
         if isinstance(key, tuple):
-            row_slice, col_slice = key
-            # Handle basic slicing for demo (e.g., M[0:100, 0:100])
-            r_start, r_stop = row_slice.start or 0, row_slice.stop or self.shape[0]
-            c_start, c_stop = col_slice.start or 0, col_slice.stop or self.shape[1]
+            row_key, col_key = key
+            
+            # Case 1: Single Element Resolution (e.g., M[0, 0])
+            if isinstance(row_key, int) and isinstance(col_key, int):
+                return self.desc.resolve(row_key, col_key)
+            
+            # Case 2: Slicing (e.g., M[0:10, 0:10])
+            r_start = getattr(row_key, 'start', 0) or 0
+            r_stop = getattr(row_key, 'stop', self.shape[0]) or self.shape[0]
+            c_start = getattr(col_key, 'start', 0) or 0
+            c_stop = getattr(col_key, 'stop', self.shape[1]) or self.shape[1]
             
             rows = r_stop - r_start
             cols = c_stop - c_start
@@ -144,16 +161,17 @@ class GeometricMatrix:
             if HAS_RUST:
                 struct = GeometricDescriptorStruct(self.desc.rows, self.desc.cols, self.desc.signature, self.desc.depth)
                 res = np.zeros(rows * cols, dtype=np.float32)
-                # Note: This simple implementation assumes contiguous range for bulk demo
                 lib.g_matrix_resolve_bulk(
                     struct, 
                     res.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-                    r_start * self.desc.cols + c_start, # rough offset
+                    r_start * self.desc.cols + c_start, 
                     rows * cols
                 )
                 return res.reshape(rows, cols)
             else:
                 return np.array([[self.desc.resolve(r, c) for c in range(c_start, c_stop)] for r in range(r_start, r_stop)])
+        
+        # Case 3: Single Row Index (e.g., M[0])
         return self.desc.resolve(key, 0)
 
 # --- INDUCTIVE TILE ENGINE ---
@@ -168,12 +186,19 @@ class InductiveEngine:
         self.law_cache: Dict[int, List[List[float]]] = {}
 
     def _hash_tile(self, tile: List[List[float]]) -> int:
-        # Simplified tile signature
-        flat = [val for row in tile for val in row]
-        h = len(flat)
-        if flat:
-            h ^= int(flat[0] * 1e6) ^ int(flat[-1] * 1e6)
-        return fmix64(h)
+        """Full-content rolling hash over ALL tile elements.
+        Each element's float bits are folded with its index via fmix64,
+        preventing collisions between tiles with different interiors."""
+        h = 0xcbf29ce484222325  # FNV offset basis
+        idx = 0
+        for row in tile:
+            for val in row:
+                # Pack float to 4-byte int representation
+                bits = struct.unpack('I', struct.pack('f', val))[0]
+                h ^= fmix64(bits ^ idx)
+                h = (h * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF  # FNV prime
+                idx += 1
+        return h
 
     def matmul(self, A: Any, B: Any) -> Any:
         import numpy as np

@@ -1,5 +1,3 @@
-use std::slice;
-
 pub const HDC_DIM: usize = 1024;
 pub const U64_COUNT: usize = 16; // 1024 / 64
 

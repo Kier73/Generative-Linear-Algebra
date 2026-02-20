@@ -93,6 +93,19 @@ pub extern "C" fn g_matrix_resolve_bulk(
 
 const TILE_SIZE: usize = 32;
 
+fn hash_tile(data: &[f32], rows: usize, cols: usize, stride: usize) -> u64 {
+    let mut h: u64 = 0xcbf29ce484222325; // FNV offset basis
+    for i in 0..rows {
+        for j in 0..cols {
+            let val = data[i * stride + j];
+            let bits = val.to_bits() as u64;
+            h ^= fmix64(bits ^ (i as u64 * 31 + j as u64));
+            h = h.wrapping_mul(0x100000001b3); // FNV prime
+        }
+    }
+    h
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn g_matrix_inductive_matmul(
     a_ptr: *const f32,
@@ -107,20 +120,29 @@ pub unsafe extern "C" fn g_matrix_inductive_matmul(
     let c = std::slice::from_raw_parts_mut(c_ptr, m * n_dim);
 
     for i in (0..m).step_by(TILE_SIZE) {
+        let i_end = std::cmp::min(i + TILE_SIZE, m);
+        let i_rows = i_end - i;
+
         for j in (0..n_dim).step_by(TILE_SIZE) {
+            let j_end = std::cmp::min(j + TILE_SIZE, n_dim);
+            let j_cols = j_end - j;
+
             for k in (0..k_dim).step_by(TILE_SIZE) {
-                // Simplified hash generation for tiles
-                // In production, we would hash the actual tile content.
-                // For this demo, we use a signature based on pointers and offsets for speed.
-                let tile_a_sig = (a_ptr as u64).wrapping_add((i * k_dim + k) as u64);
-                let tile_b_sig = (b_ptr as u64).wrapping_add((k * n_dim + j) as u64);
-                let pair_hash = fmix64(tile_a_sig ^ tile_b_sig.rotate_left(13));
+                let k_end = std::cmp::min(k + TILE_SIZE, k_dim);
+                let k_size = k_end - k;
+
+                // Extract Tile Content Hashes
+                let tile_a_data = &a[i * k_dim + k..];
+                let tile_b_data = &b[k * n_dim + j..];
+
+                let h_a = hash_tile(tile_a_data, i_rows, k_size, k_dim);
+                let h_b = hash_tile(tile_b_data, k_size, j_cols, n_dim);
+
+                let pair_hash = fmix64(h_a ^ h_b.rotate_left(13));
 
                 if let Some(res) = LAW_CACHE.get(&pair_hash) {
-                    // Cache Hit: Recall
                     accumulate_tile(c, &res, i, j, n_dim, m);
                 } else {
-                    // Cache Miss: Compute & Induct
                     let res = compute_tile(a, b, i, j, k, m, k_dim, n_dim);
                     let res_arc = Arc::new(res);
                     LAW_CACHE.insert(pair_hash, res_arc.clone());
