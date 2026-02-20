@@ -43,11 +43,6 @@ pip install -r requirements.txt
 ```
 
 ### Quick Usage (Python)
-<<<<<<< HEAD
-The SDK provides a Unified Registry to access all matrix generations. V, G and X
-=======
-**Recommended**: The SDK provides a **Unified Registry** to access all matrix generations without manual imports. This is the default way to use the library.
->>>>>>> 5dadf6a (Optimize matrix engines and fix code quality issues)
 
 ```python
 from sdk_registry import Registry
@@ -180,7 +175,6 @@ exact_result = sdk.rns_matmul(A, B)
 
 ## Final Benchmark & Optimization Report
 
-**System Status**: ✅ ALL SYSTEMS NOMINAL
 **Architecture**: Hybrid Python/Rust with Isomorphic Semantic Engine
 **Claim Verified**: $O(n^2)$ Materialization / $O(1)$ Symbolic Operation
 
