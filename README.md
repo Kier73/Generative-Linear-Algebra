@@ -1,9 +1,7 @@
 # Exploring the Shape of Linear Algebra
 
-**Generative Linear Algebra** is an SDK for manipulating matrices too large to fit in memory, using algorithmic synthesis instead of dense storage.
-
 ---
-These methods can be used as standalone solvers for Matrix Multiplication, or as infinite-scale enhancements to industry standards like NumPy and PyTorch.
+These methods can be used as standalone solvers for Matrix Multiplication, or as scale-invariant enhancements to industry standards like NumPy and PyTorch.
 ---
 
 ## Core Generations
@@ -77,12 +75,11 @@ cd Generative-Linear-Algebra
 pip install -r requirements.txt
 ```
 
-<<<<<<< HEAD
 ### Quick Usage (Python)
 =======
 ### Quick Usage
 The **Unified Registry** is the recommended way to interact with all matrix generations.
->>>>>>> a4992f5 (Refinement: Mathematical grounding, Rust acceleration, and rigorous audit alignment. 253/253 tests pass.)
+
 
 ```python
 from sdk_registry import Registry
@@ -276,7 +273,7 @@ Comparison against Industry Standards (NumPy/OpenBLAS, PyTorch) for Dense Matrix
 ---
 
 =======
->>>>>>> a4992f5 (Refinement: Mathematical grounding, Rust acceleration, and rigorous audit alignment. 253/253 tests pass.)
+
 ## Author & License
 
 **Author**: Kieran Vanderburgh  
