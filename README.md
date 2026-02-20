@@ -5,7 +5,7 @@
 ## Core 
 
 ### Generation 1: V-Series (VMatrix)
-**"The Holographic Projector"**
+**"Projection"**
 - **Core Philosophy**: Data is not stored; it is *projected* from algorithmic seeds.
 - **Mechanism**: Matrices are defined by 64-bit signatures. When an element $A_{ij}$ is requested, it is synthesized on-the-fly using deterministic **Cellular Automata rules (Rule 30/90/110)** and Feistel Network hashes.
 - **Advantage**: Zero memory footprint for the matrix itself. A $10^{15} \times 10^{15}$ matrix takes up only 16 bytes of RAM (the seed).
