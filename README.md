@@ -1,4 +1,4 @@
-# Exploring Improvements for Linear Algebra
+# Exploring the Shape of Linear Algebra
 
 ---
 
