@@ -40,7 +40,7 @@ pip install -r requirements.txt
 ```
 
 ### Quick Usage (Python)
-The SDK provides a Unified Registry to access all matrix generations.
+The SDK provides a Unified Registry to access all matrix generations. V, G and X
 
 ```python
 from sdk_registry import Registry
