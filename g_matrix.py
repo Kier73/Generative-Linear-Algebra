@@ -195,7 +195,7 @@ class InductiveEngine:
         A_list = a_np.tolist()
         B_list = b_np.tolist()
         C = [[0.0] * N for _ in range(M)]
-        # ... (rest of tile logic omitted for brevity in this modification, but in real file it continues)
+        
         for i in range(0, M, self.tile_size):
             for j in range(0, N, self.tile_size):
                 for k in range(0, K, self.tile_size):
