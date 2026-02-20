@@ -1,6 +1,6 @@
 # Exploring Improvements for Linear Algebra
 
-This project provides the improvements to created for matrix multiplication and linear algebra developed during research of the Virtual Layer. 
+This project provides the improvements for matrix multiplication and linear algebra developed during research of the Virtual Layer. 
 
 ---
 
