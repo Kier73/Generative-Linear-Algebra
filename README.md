@@ -277,4 +277,4 @@ Comparison against Industry Standards (NumPy/OpenBLAS, PyTorch) for Dense Matrix
 **Contact**: [Kier73research@gmail.com](mailto:Kier73research@gmail.com)
 
 This project is dual-licensed under the **MIT** and **Apache 2.0** licenses.  
-© 2026 Kieran Vanderburgh | Part of the Virtual Layer Project.
+2026 Kieran Vanderburgh | Part of the Virtual Layer Project.
