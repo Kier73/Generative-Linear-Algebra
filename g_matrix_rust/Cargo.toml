@@ -1,0 +1,13 @@
+[package]
+name = "g_matrix_rust"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+dashmap = "5.5.3"
+lazy_static = "1.4.0"
+# Use a fast non-cryptographic hasher
+hashbrown = "0.14.0"
