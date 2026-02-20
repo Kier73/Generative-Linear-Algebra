@@ -1,6 +1,9 @@
 # Exploring the Shape of Linear Algebra
 
 ---
+These Methods can be used as stand alone solvers for Matrix Multiplication, or enhancements to industry standards
+
+---
 
 ## Core 
 
